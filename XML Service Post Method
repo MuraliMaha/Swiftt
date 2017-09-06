@@ -1,0 +1,81 @@
+func callService (){
+       
+        var inputStr = "$DriveLogin|" + "janani" + "|" + "janani@123"
+        let deviceIMEI = UIDevice.current.identifierForVendor?.uuidString
+        let deviceToken = "1"
+        inputStr.append("|" + deviceIMEI! + "|" + deviceToken + "|#")
+        print("Login CMD = " + inputStr)
+        let inputDict = ["CMD": inputStr]
+        
+        
+        let DriveSupervisorBaseURL = "http://drivee.in/drivesupervisorapp/Drivesupervisorservicev2.asmx"
+        let LoginAPI = "Login"
+        
+        var xmlMessage = "<\(LoginAPI) xmlns= 'http://tempuri.org/' >"
+        for (key,value) in inputDict {
+            xmlMessage.append("<\(key)>\(value)</\(key)>")
+        }
+        xmlMessage.append("</\(LoginAPI)>")
+        print("xmlMessage = \(xmlMessage)")
+        
+        // need to replace double quotes  of XML text that exist in webportal with single quotes
+        let fullXMLMessage = "<?xml version='1.0' encoding='utf-8'?> <soap12:Envelope xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xmlns:xsd='http://www.w3.org/2001/XMLSchema' xmlns:soap12='http://www.w3.org/2003/05/soap-envelope'><soap12:Body> \(xmlMessage) </soap12:Body></soap12:Envelope>"
+        let soapLenth = String(fullXMLMessage.characters.count)
+        let theURLString = DriveSupervisorBaseURL
+        let theURL = URL(string : theURLString)
+//        let mutableReq = NSMutableURLRequest(url: theURL!)
+        var Request = URLRequest.init(url: theURL!)
+        
+        Request.addValue("application/soap+xml; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        Request.addValue(soapLenth, forHTTPHeaderField: "Content-Length")
+        Request.httpMethod = "POST"
+        
+        
+        Request.httpBody = fullXMLMessage.data(using: String.Encoding.utf8)
+
+        Alamofire.request(Request)
+            .responseJSON { (responce) in
+                switch responce.result {
+                case .success(let Value):
+                    let responceData = Value as! NSDictionary
+                    let dataArr = responceData.object(forKey: "data") as! NSArray
+                    print("Sucess")
+                    
+                    
+                 
+                    break
+                case .failure(let error):
+                    print(error.localizedDescription)
+                    
+                    //as some string is appended with jsonresponse,ctrl comes here.we handled by following lines
+                    if (responce.response != nil) {
+                        
+                        if (responce.response?.statusCode)! == 200 {
+                            
+                            let ResponseStr = String.init(data: responce.data!, encoding: .utf8)
+                            let arr = ResponseStr?.components(separatedBy: "<")
+                            let finStr = arr?[0]
+                            
+                            if let FinalData = finStr?.data(using: .utf8) {
+                                if let JsonDict:[String:AnyObject] = try? JSONSerialization.jsonObject(with: FinalData, options: .allowFragments) as! [String:AnyObject] {
+                                    print(JsonDict)
+                                }
+                                else {
+                                    
+                                }
+                            }
+                            else {
+                                
+                            }
+                        }
+                    }
+                    
+                    
+
+                    
+                    
+                    break
+                }
+        }
+        
+    }

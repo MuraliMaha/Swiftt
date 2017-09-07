@@ -1,0 +1,65 @@
+func callService() {
+
+
+        
+        
+
+        let DriveSupervisorBaseURL = "url...."
+        let LoginAPI = "Login?cmd="
+        let parameter = DriveSupervisorBaseURL + LoginAPI + inputStr
+        print("parameter = \(parameter)")
+
+        let theURLString = parameter
+         let theURL = URL.init(string: theURLString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!
+        var Request = URLRequest.init(url: theURL)
+        Request.httpMethod = "GET"
+        
+        
+        Alamofire.request(Request)
+            .responseJSON { (responce) in
+                switch responce.result {
+                case .success(let Value):
+                    let responceData = Value as! NSDictionary
+                    let dataArr = responceData.object(forKey: "data") as! NSArray
+                    print("Sucess")
+                    
+                    
+                    
+                    break
+                case .failure(let error):
+                    print("The error = \(error.localizedDescription)")
+                    
+                    //as some string is appended with jsonresponse,ctrl comes here.we handled by following lines
+                    if (responce.response != nil) {
+                        
+                        if (responce.response?.statusCode)! == 200 {
+                            
+                            let ResponseStr = String.init(data: responce.data!, encoding: .utf8)
+                            let arr = ResponseStr?.components(separatedBy: "<")
+                            let finStr = arr?[0]
+                            
+                            if let FinalData = finStr?.data(using: .utf8) {
+                                if let JsonDict:[String:AnyObject] = try? JSONSerialization.jsonObject(with: FinalData, options: .allowFragments) as! [String:AnyObject] {
+                                    print(JsonDict)
+                                }
+                                else {
+                                    
+                                }
+                            }
+                            else {
+                                
+                            }
+                        }
+                    }
+                    
+                    
+                    
+                    
+                    
+                    break
+                }
+        }
+
+        
+        
+    }

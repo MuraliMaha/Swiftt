@@ -1,14 +1,9 @@
 func callService (){
        
-        var inputStr = "$DriveLogin|" + "janani" + "|" + "janani@123"
-        let deviceIMEI = UIDevice.current.identifierForVendor?.uuidString
-        let deviceToken = "1"
-        inputStr.append("|" + deviceIMEI! + "|" + deviceToken + "|#")
-        print("Login CMD = " + inputStr)
-        let inputDict = ["CMD": inputStr]
+       
         
         
-        let DriveSupervisorBaseURL = "http://drivee.in/drivesupervisorapp/Drivesupervisorservicev2.asmx"
+        let DriveSupervisorBaseURL = "url...."
         let LoginAPI = "Login"
         
         var xmlMessage = "<\(LoginAPI) xmlns= 'http://tempuri.org/' >"

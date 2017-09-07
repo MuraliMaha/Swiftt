@@ -1,0 +1,50 @@
+ func callWebService() {
+        let urlString: String = "http://maps.google.com/maps/api/directions/json?origin=Chennai&destination=Madurai&sensor=false"
+        guard let url = URL(string: urlString) else {
+            print("Error: cannot create URL")
+            return
+        }
+        let urlRequest = URLRequest(url: url)
+        
+        // set up the session
+        let config = URLSessionConfiguration.default
+        let session = URLSession(configuration: config)
+        
+        // make the request
+        let task = session.dataTask(with: urlRequest, completionHandler: { (data, response, error) in
+            // do stuff with response, data & error here
+            guard error == nil else {
+                print("error")
+                print(error!)
+                return
+            }
+            guard let responseData = data else {
+                print(" did not receive data")
+                return
+            }
+            do {
+                guard let myResponse = try JSONSerialization.jsonObject(with: responseData, options: []) as? [String: AnyObject] else {
+                    print("error ")
+                    return
+                }
+
+               print( "\(myResponse["status"]!)" )
+                let Routes = myResponse["routes"] as! [[String:AnyObject]]
+                let Routes_Data = Routes[0]
+                let Legs = Routes_Data["legs"] as! [[String:AnyObject]]
+                let Legs_Data = Legs[0]
+                let steps = Legs_Data["steps"] as! [[String:AnyObject]]
+                for steps_Data in steps{
+                    print(steps_Data)
+                    self.myResArray.append(steps_Data)
+                }
+
+                self.myTableView.reloadData()
+               
+            } catch  {
+                print("error trying to convert data to JSON")
+                return
+            }
+        })
+        task.resume()
+    }

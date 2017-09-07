@@ -1,0 +1,52 @@
+func callService() {
+        let apikey = "tz6n5M+lnJVw007muIr7UXATrR4quD9V4Z+upTXcDXWzD7LE1eZaHdcyBe/Z3TjChzPdgS5dKvVIQm6gq6HVuw=="
+        let articleID = "136"
+        let userID = "79"
+        
+        let postPar = ["api_key_data":"\(apikey)",
+            "article_id":"\(articleID)",
+            "user_id" :"\(userID)",
+            "assesment_id":""]
+        
+        let urlString = "http://54.251.120.210/DedaaBox_dev/index.php/Articles/article_details"
+        let url = URL.init(string: urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!
+        guard let paramData = try? JSONSerialization.data(withJSONObject: postPar, options: .init(rawValue: 0)) else {
+            return
+        }
+        var Request = URLRequest.init(url: url)
+        Request.httpMethod = "POST"
+        Request.httpBody = paramData
+        Request.allHTTPHeaderFields = ["Content-Type":"application/json"]
+        Alamofire.request(Request)
+            .responseJSON { (responce) in
+                switch responce.result {
+                case .success(let Value):
+                    let responceData = Value as! NSDictionary
+                    //                    print(responceData)
+                    
+                    let responseObject = responceData.object(forKey: "response") as! NSDictionary
+                    //                    print(responseObject)
+                    
+                    let data = responseObject.object(forKey: "data") as! NSDictionary
+                    //                    print(data)
+                    let articleData = data.object(forKey: "article_data") as! NSArray
+                    for all in articleData{
+                        self.Content_Data.add(all)
+                        
+                    }
+                    
+                    let i = articleData[0] as! NSDictionary
+                    self.title_text = "\(i["title"]!)"
+                    self.Description =  "\(i["description"]!)"
+                    self.shortDescription = "\(i["short_description"]!)"
+                    self.videoURL = "\(i["link"]!)"
+                    
+                    self.contentTableView.reloadData()
+                    break
+                case .failure(let error):
+                    print(error.localizedDescription)
+                    break
+                }
+        }
+
+    }

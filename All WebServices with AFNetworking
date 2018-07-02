@@ -1,0 +1,470 @@
+//
+//  WebService.swift
+//  WebServiceHandler1
+//
+//  Created by SunTelematics on 28/06/18.
+//  Copyright © 2018 SunTelematics. All rights reserved.
+//
+
+import UIKit
+
+
+class WebServiceClass {
+  
+    //MARK:- SOAP 1.1
+    func SOAP1_1WebServiceMethod(suffix : String , parameterDict : [String:String],completion:@escaping (_ Data:Any,_ IsSuccess:Bool) -> ())
+    {
+        
+        //Part 1
+        var ParamsStr = "<\(suffix) xmlns= 'http://tempuri.org/' >"
+        for (key,value) in parameterDict {
+            ParamsStr.append("<\(key)>\(value)</\(key)>")
+        }
+        ParamsStr.append("</\(suffix)>")
+        print("ParamsStr = \(ParamsStr)")
+        
+        // need to replace double quotes  of XML text that exist in webportal with single quotes
+        let fullXMLMessage = "<?xml version='1.0' encoding='utf-8'?> <soap:Envelope xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xmlns:xsd='http://www.w3.org/2001/XMLSchema' xmlns:soap='http://schemas.xmlsoap.org/soap/envelope/'><soap:Body> \(ParamsStr) </soap:Body></soap:Envelope>"
+        
+        print("ParamsStr = \(ParamsStr)")
+        print("Full XML Msg = ",fullXMLMessage)
+        let soapLenth = String(fullXMLMessage.count)
+        
+        
+        //Part 2
+        let theUrlString = UrlStruct.test
+        let theURL = URL(string: theUrlString)
+        
+        
+        //Part 3
+        var mutableR = URLRequest.init(url: theURL!)
+        mutableR.httpMethod = "POST"
+        mutableR.allHTTPHeaderFields = ["Content-Type":"text/xml; charset=utf-8","Content-Length":soapLenth,"SOAPAction":"http://tempuri.org/\(suffix)"]
+        mutableR.httpBody = fullXMLMessage.data(using: String.Encoding.utf8)
+        
+        mutableR.timeoutInterval = 35
+        mutableR.allowsCellularAccess = true
+        
+        
+        //Part 4
+        let manager = AFHTTPRequestOperation(request: mutableR as URLRequest)
+        
+        manager.setCompletionBlockWithSuccess({ (operation : AFHTTPRequestOperation, responseObject : Any) -> Void in
+            
+            let data = NSMutableData(data: responseObject as! Data)
+            
+            let str = NSString(bytes: data.mutableBytes, length: data.length, encoding: String.Encoding.utf8.rawValue)
+            
+            let arr = str?.components(separatedBy: "<")
+            let finStr = arr?[0]
+            
+            if let FinalData = finStr?.data(using: .utf8) {
+                if let JsonDict:[String:AnyObject] = try? JSONSerialization.jsonObject(with: FinalData, options: .allowFragments) as! [String:AnyObject] {
+                    completion(JsonDict,true)
+                }
+                else {
+                    completion([:],false)
+                }
+            }
+            else {
+                completion([:],false)
+            }
+            
+        }, failure: { (operation : AFHTTPRequestOperation, error : Error) -> Void in
+            
+            print(error, terminator: "")
+            
+            completion([:],false)
+            
+        })
+        
+        manager.start()
+        
+        
+        
+        
+    }
+
+    //MARK:- SOAP 1.2
+    func SOAP1_2WebServiceMethod(suffix : String , parameterDict : [String:String],completion:@escaping (_ Data:Any,_ IsSuccess:Bool) -> ())
+    {
+        
+        //Part 1
+        var ParamsStr = "<\(suffix) xmlns= 'http://tempuri.org/' >"
+        for (key,value) in parameterDict {
+            ParamsStr.append("<\(key)>\(value)</\(key)>")
+        }
+        ParamsStr.append("</\(suffix)>")
+        print("xmlMessage = \(ParamsStr)")
+        
+        // need to replace double quotes  of XML text that exist in webportal with single quotes
+        let fullXMLMessage = "<?xml version='1.0' encoding='utf-8'?> <soap12:Envelope xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xmlns:xsd='http://www.w3.org/2001/XMLSchema' xmlns:soap12='http://www.w3.org/2003/05/soap-envelope'><soap12:Body> \(ParamsStr) </soap12:Body></soap12:Envelope>"
+        
+
+        
+        print("ParamsStr = \(ParamsStr)")
+        print("Full XML Msg = ",fullXMLMessage)
+        let soapLenth = String(fullXMLMessage.count)
+        
+        
+        //Part 2
+        let theUrlString = UrlStruct.test
+        let theURL = URL(string: theUrlString)
+        
+ 
+        
+        //Part 3
+        var mutableR = URLRequest.init(url: theURL!)
+        mutableR.httpMethod = "POST"
+        mutableR.allHTTPHeaderFields = ["Content-Type":"application/soap+xml; charset=utf-8","Content-Length":soapLenth]
+        mutableR.httpBody = fullXMLMessage.data(using: String.Encoding.utf8)
+        
+        mutableR.timeoutInterval = 35
+        mutableR.allowsCellularAccess = true
+        
+        //Part 4
+        let manager = AFHTTPRequestOperation(request: mutableR as URLRequest)
+        
+        manager.setCompletionBlockWithSuccess({ (operation : AFHTTPRequestOperation, responseObject : Any) -> Void in
+            
+            let data = NSMutableData(data: responseObject as! Data)
+            
+            let str = NSString(bytes: data.mutableBytes, length: data.length, encoding: String.Encoding.utf8.rawValue)
+            
+            let arr = str?.components(separatedBy: "<")
+            let finStr = arr?[0]
+            
+            if let FinalData = finStr?.data(using: .utf8) {
+                if let JsonDict:[String:AnyObject] = try? JSONSerialization.jsonObject(with: FinalData, options: .allowFragments) as! [String:AnyObject] {
+                    completion(JsonDict,true)
+                }
+                else {
+                    completion([:],false)
+                }
+            }
+            else {
+                completion([:],false)
+            }
+            
+        }, failure: { (operation : AFHTTPRequestOperation, error : Error) -> Void in
+            
+            print(error, terminator: "")
+            
+            completion([:],false)
+            
+        })
+        
+        manager.start()
+    }
+    
+    //MARK:- HTTP GET
+    func HTTP_GET_WebServiceMethod(suffix : String , parameterDict : [String:String],completion:@escaping (_ Data:Any,_ IsSuccess:Bool) -> ())
+    {
+        
+        //Part 1
+        var parameters = ""
+        for (key,value) in parameterDict {
+            parameters.append(key + "=" + value + "&")
+        }
+        parameters.remove(at: parameters.index(parameters.endIndex, offsetBy: -1))
+        
+        
+        //Part 2
+        let theUrlString = UrlStruct.test + "/" + suffix + "?" + parameters
+        let theURL = URL(string: theUrlString)
+        
+        //Part 3
+        var mutableR = URLRequest.init(url: theURL!)
+        
+        mutableR.timeoutInterval = 35
+        mutableR.allowsCellularAccess = true
+        
+        //Part 4
+        let manager = AFHTTPRequestOperation(request: mutableR as URLRequest)
+        
+        manager.setCompletionBlockWithSuccess({ (operation : AFHTTPRequestOperation, responseObject : Any) -> Void in
+            
+            let responseData = responseObject as! Data
+            
+            if let JsonDict:[String:AnyObject] = try? JSONSerialization.jsonObject(with: responseData, options: .allowFragments) as! [String:AnyObject]{
+                completion(JsonDict,true)
+            }else {
+                completion([:],false)
+            }
+            
+        }, failure: { (operation : AFHTTPRequestOperation, error : Error) -> Void in
+            
+            print(error, terminator: "")
+            
+            completion([:],false)
+            
+        })
+        
+        manager.start()
+    }
+    
+    //MARK:- HTTP POST
+    func HTTP_POST_WebServiceMethod(suffix : String , parameterDict : [String:String],completion:@escaping (_ Data:Any,_ IsSuccess:Bool) -> ())
+    {
+        
+        //Part 1
+        var parameters = ""
+        for (key,value) in parameterDict {
+            parameters.append(key + "=" + value + "&")
+        }
+        parameters.remove(at: parameters.index(parameters.endIndex, offsetBy: -1))
+        let soapLenth = String(parameters.count)
+        
+        
+        //Part 2
+        let theUrlString = UrlStruct.test + "/" + suffix
+        let theURL = URL(string: theUrlString)
+        
+        //Part 3
+        var mutableR = URLRequest.init(url: theURL!)
+        mutableR.httpMethod = "POST"
+        mutableR.allHTTPHeaderFields = ["Content-Type":"application/x-www-form-urlencoded","Content-Length":soapLenth]
+        mutableR.httpBody = parameters.data(using: String.Encoding.utf8)
+        
+        mutableR.timeoutInterval = 35
+        mutableR.allowsCellularAccess = true
+        
+        //Part 4
+        let manager = AFHTTPRequestOperation(request: mutableR as URLRequest)
+        
+        manager.setCompletionBlockWithSuccess({ (operation : AFHTTPRequestOperation, responseObject : Any) -> Void in
+            
+            let responseData = responseObject as! Data
+            
+            if let JsonDict:[String:AnyObject] = try? JSONSerialization.jsonObject(with: responseData, options: .allowFragments) as! [String:AnyObject]{
+                completion(JsonDict,true)
+            }else {
+                completion([:],false)
+            }
+            
+        }, failure: { (operation : AFHTTPRequestOperation, error : Error) -> Void in
+            
+            print(error, terminator: "")
+            
+            completion([:],false)
+            
+        })
+        
+        manager.start()
+    }
+    
+    
+    //This method doesnt require - App Transport Security policy
+    //MARK:- Json Input
+    func jsonInputWebServiceMethod(suffix : String , parameterDict : [String:String],completion:@escaping (_ Data:Any,_ IsSuccess:Bool) -> ())
+    {
+        
+        //Part 1
+        let theUrlString = UrlStruct.DriveBookingBase + "/" + suffix
+        let theURL = URL(string: theUrlString)
+        
+        //Part 2
+        var mutableR = URLRequest.init(url: theURL!)
+        mutableR.httpMethod = "POST"
+        mutableR.allHTTPHeaderFields = ["Content-Type":"application/json"]
+        
+        mutableR.timeoutInterval = 35
+        mutableR.allowsCellularAccess = true
+        
+        //Part 3
+        let ParamsData = try? JSONSerialization.data(withJSONObject: parameterDict, options: .prettyPrinted)
+        
+        if (ParamsData != nil) {
+            mutableR.httpBody = ParamsData!
+        }
+        else {
+            completion([:],false)
+            return
+        }
+        
+        
+        //Part 4
+        let manager = AFHTTPRequestOperation(request: mutableR as URLRequest)
+        
+        manager.setCompletionBlockWithSuccess({ (operation : AFHTTPRequestOperation, responseObject : Any) -> Void in
+            
+            let responseData = responseObject as! Data
+            
+            if let JsonDict:[String:AnyObject] = try? JSONSerialization.jsonObject(with: responseData, options: .allowFragments) as! [String:AnyObject]{
+                completion(JsonDict,true)
+            }else {
+                completion([:],false)
+            }
+            
+        }, failure: { (operation : AFHTTPRequestOperation, error : Error) -> Void in
+            
+            print(error, terminator: "")
+            
+            completion([:],false)
+            
+        })
+        
+        manager.start()
+    }
+}
+struct UrlStruct
+{
+    static let DriveBookingBase = "booking url"
+    static let test = "driveFMC url"
+}
+//
+//  ViewController.swift
+//  WebServiceAFNetworking
+//
+//  Created by SunTelematics on 30/06/18.
+//  Copyright © 2018 SunTelematics. All rights reserved.
+//
+
+import UIKit
+
+class ViewController: UIViewController {
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Do any additional setup after loading the view, typically from a nib.
+    }
+
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
+    }
+    
+    //MARK:- SOAP 1.1
+    @IBAction func soap1_1BtnTapped(_ sender: UIButton) {
+        let requestDict = ["CancelType":"1","RequestId" : "100","DateTime": "2018-june","EmpCode":"hp1030"]
+        
+        WebServiceClass().SOAP1_1WebServiceMethod(suffix: "CancelRequest", parameterDict: requestDict) { (FullResponse, ResponseStatus) in
+            
+            if ResponseStatus {
+                
+                let fullResponseDict = FullResponse as! [String:AnyObject]
+                print("fullResponse =",fullResponseDict)
+                
+                if let data = fullResponseDict["data"] as! [[String:AnyObject]]? {
+                    print("data = ",data)
+                }
+                    
+                else {
+                    print("ResponseDict not assigned to Dict - failure")
+                }
+            }
+            else {
+                print("ResponseStatus is false")
+            }
+            
+        }
+    }
+    
+    //MARK : - SOAP 1.2
+    @IBAction func soap1_2BtnTapped(_ sender: UIButton) {
+        let requestDict = ["CancelType":"1","RequestId" : "100","DateTime": "2018-june","EmpCode":"hp1030"]
+      
+        WebServiceClass().SOAP1_2WebServiceMethod(suffix: "CancelRequest", parameterDict: requestDict) { (FullResponse, ResponseStatus) in
+            
+            if ResponseStatus {
+                
+                let fullResponseDict = FullResponse as! [String:AnyObject]
+                print("fullResponse =",fullResponseDict)
+                
+                if let data = fullResponseDict["data"] as! [[String:AnyObject]]? {
+                    print("data = ",data)
+                }
+                    
+                else {
+                    print("ResponseDict not assigned to Dict - failure")
+                }
+            }
+            else {
+                print("ResponseStatus is false")
+            }
+            
+        }
+    }
+    
+    
+    
+    //MARK: - HTTP GET
+    @IBAction func HTTP_GET_BtnTapped(_ sender: UIButton) {
+        let requestDict = ["CancelType":"1","RequestId" :"100","DateTime": "2018-june","EmpCode":"hp1030"]
+       
+        WebServiceClass().HTTP_GET_WebServiceMethod(suffix: "CancelRequest", parameterDict: requestDict) { (FullResponse, ResponseStatus) in
+            
+            if ResponseStatus {
+                
+                let fullResponseDict = FullResponse as! [String:AnyObject]
+                print("fullResponseDict =",fullResponseDict)
+                
+                if let data = fullResponseDict["data"] as! [[String:AnyObject]]? {
+                    print("data = ",data)
+                }
+                    
+                else {
+                    print("ResponseDict not assigned to Dict - failure")
+                }
+            }
+            else {
+                print("ResponseStatus is false")
+            }
+            
+        }
+    }
+    //MARK: - HTTP POST
+    @IBAction func HTTP_POST_BtnTapped(_ sender: UIButton) {
+        let requestDict = ["CancelType":"1","RequestId" :"100","DateTime": "2018-june","EmpCode":"hp1030"]
+        
+        WebServiceClass().HTTP_POST_WebServiceMethod(suffix: "CancelRequest", parameterDict: requestDict) { (FullResponse, ResponseStatus) in
+            
+            if ResponseStatus {
+                
+                let fullResponseDict = FullResponse as! [String:AnyObject]
+                print("fullResponse =",fullResponseDict)
+                
+                if let data = fullResponseDict["data"] as! [[String:AnyObject]]? {
+                    print("data = ",data)
+                }
+                    
+                else {
+                    print("ResponseDict not assigned to Dict - failure")
+                }
+            }
+            else {
+                print("ResponseStatus is false")
+            }
+            
+        }
+    }
+    //MARK: - Json Input
+    @IBAction func JsonInputBtnTapped(_ sender: UIButton) {
+
+        let RequestDict = ["MobileNo":"7896543211","EmpId":"214672","VendorId":"1287","CorporateId":"10811","AppCustomerType":"2"]
+        
+        WebServiceClass().jsonInputWebServiceMethod(suffix: "BookingsHistory", parameterDict: RequestDict) { (FullResponse, ResponseStatus) in
+            
+            
+            if ResponseStatus {
+                
+                let fullResponseDict = FullResponse as! [String:AnyObject]
+                print("fullResponse =",fullResponseDict)
+                
+                if let Table = fullResponseDict["Table"] as! [[String:AnyObject]]? {
+                    print("Table = ",Table)
+                }
+                    
+                else {
+                    print("ResponseDict not assigned to Dict - failure")
+                }
+            }
+            else {
+                print("ResponseStatus is false")
+            }
+        }
+    }
+
+
+}
+
